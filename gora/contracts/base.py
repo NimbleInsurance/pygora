@@ -16,14 +16,9 @@ from algopy import (
     OnCompleteAction,
     TransactionType,
 )
-from algopy.op import *
 
 from typing import Literal as L
 
-
-# ABI method argument specs to build signatures for oracle method calls.
-request_method_spec = "(byte[],byte[],uint64,byte[],uint64[],uint64[],address[],(byte[],uint64)[])void"
-response_method_spec = "(uint32[],byte[])void"
 
 # ARC-4 type definitions for oracle specifications
 class SourceSpec(arc4.Struct):
@@ -142,13 +137,8 @@ class GoraContract(ARC4Contract):
     @subroutine
     def auth_dest_call(self) -> None:
         """Confirm that current call to a destination app is coming from Gora."""
-        # Claude's version doesn't build, so replacing with something that does
-        # caller_creator = op.AppParamsGet.creator(Global.caller_app_id)[1]
         caller_creator = Application(Global.caller_application_id).creator
         assert caller_creator == Application(self.gora_main_app_id).address
-        # assert caller_creator == Bytes(main_app_info["addr_bin"])
-        # Claude originally translated as #Bytes.from_hex(main_app_info["addr_bin"].hex());
-        # confirming that the modified version is correct before purging.
 
     @subroutine
     def smart_assert(self, condition: bool, error_code: UInt64) -> None:
@@ -185,10 +175,15 @@ class GoraContract(ARC4Contract):
         )
         
         # Submit oracle request via inner transaction
+        request_method_signature = arc4.arc4_signature(
+            "request(byte[],byte[],uint64,byte[],uint64[],uint64[],address[],(byte[],uint64)[])void"
+        )
         itxn.ApplicationCall(
             app_id=self.gora_main_app_id,
+            fee=Global.min_txn_fee,
+            on_completion=OnCompleteAction.NoOp,
             app_args=(
-                Bytes(b"request"),  # Method selector
+                request_method_signature,
                 request_spec_encoded,
                 dest_spec.bytes,
                 op.itob(request_type),
