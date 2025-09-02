@@ -171,7 +171,7 @@ class GoraContract(ARC4Contract):
         # Create destination specification
         dest_spec = DestinationSpec(
             app_id=arc4.UInt64(dest_app),
-            method=arc4.DynamicBytes.from_bytes(dest_method)
+            method=arc4.DynamicBytes(dest_method)
         )
         
         # Submit oracle request via inner transaction
@@ -184,14 +184,14 @@ class GoraContract(ARC4Contract):
             on_completion=OnCompleteAction.NoOp,
             app_args=(
                 request_method_signature,
-                request_spec_encoded,
-                dest_spec.bytes,
-                op.itob(request_type),
-                request_key,
-                app_refs.bytes,
-                asset_refs.bytes, 
-                account_refs.bytes,
-                box_refs.bytes
+                arc4.DynamicBytes(request_spec_encoded),
+                arc4.DynamicBytes(dest_spec.bytes),
+                arc4.UInt64(request_type),
+                arc4.DynamicBytes(request_key),
+                app_refs,
+                asset_refs, 
+                account_refs,
+                box_refs
             )
         ).submit()
 
@@ -211,30 +211,31 @@ class GoraContract(ARC4Contract):
             value_type: UInt64,
             round_to: UInt64,
             user_data: Bytes,
+            box_refs: arc4.DynamicArray[BoxType]
     ) -> None:
         """Make a General URL request with URL source."""
         
         # Create URL source specification
         source_spec = SourceSpecUrl(
-            url=arc4.DynamicBytes.from_bytes(url),
-            auth_url=arc4.DynamicBytes.from_bytes(auth_url),
-            value_expr=arc4.DynamicBytes.from_bytes(value_expr), 
-            timestamp_expr=arc4.DynamicBytes.from_bytes(timestamp_expr),
+            url=arc4.DynamicBytes(url),
+            auth_url=arc4.DynamicBytes(auth_url),
+            value_expr=arc4.DynamicBytes(value_expr), 
+            timestamp_expr=arc4.DynamicBytes(timestamp_expr),
             max_age=arc4.UInt32(max_age),
             value_type=arc4.UInt8(value_type),
             round_to=arc4.UInt8(round_to),
-            gateway_url=arc4.DynamicBytes.from_bytes(gateway_url),
-            reserved_0=arc4.DynamicBytes.from_bytes(Bytes(b"")),
-            reserved_1=arc4.DynamicBytes.from_bytes(Bytes(b"")),
+            gateway_url=arc4.DynamicBytes(gateway_url),
+            reserved_0=arc4.DynamicBytes(b""),
+            reserved_1=arc4.DynamicBytes(b""),
             reserved_2=arc4.UInt32(0),
-            reserved_3=arc4.UInt32(0)
+            reserved_3=arc4.UInt32(0),
         )
         
         # Create request specification
         request_spec = RequestSpecUrl(
             source_specs=arc4.DynamicArray[SourceSpecUrl](source_spec.copy()),
             aggregation=arc4.UInt32(aggregation),
-            user_data=arc4.DynamicBytes.from_bytes(user_data)
+            user_data=arc4.DynamicBytes(user_data)
         )
         
         # Submit oracle request
@@ -244,7 +245,7 @@ class GoraContract(ARC4Contract):
             request_spec_encoded=request_spec.bytes,
             dest_app=dest_app,
             dest_method=dest_method,
-            box_refs=arc4.DynamicArray[BoxType](),
+            box_refs=box_refs,
             app_refs=arc4.DynamicArray[arc4.UInt64](),
             asset_refs=arc4.DynamicArray[arc4.UInt64](),
             account_refs=arc4.DynamicArray[arc4.Address]()
@@ -260,7 +261,8 @@ class GoraContract(ARC4Contract):
             spec_type: UInt64,
             exec_spec: Bytes,
             exec_args: arc4.DynamicArray[arc4.DynamicBytes],
-            user_data: Bytes
+            user_data: Bytes,
+            box_refs: arc4.DynamicArray[BoxType]
     ) -> None:
         """Make an off-chain computation request."""
         
@@ -268,19 +270,19 @@ class GoraContract(ARC4Contract):
         source_spec = SourceSpecOffChain(
             api_version=arc4.UInt32(api_version),
             spec_type=arc4.UInt8(spec_type),
-            exec_spec=arc4.DynamicBytes.from_bytes(exec_spec),
+            exec_spec=arc4.DynamicBytes(exec_spec),
             exec_args=exec_args.copy(),
-            reserved_0=arc4.DynamicBytes.from_bytes(Bytes(b"")),
-            reserved_1=arc4.DynamicBytes.from_bytes(Bytes(b"")),
+            reserved_0=arc4.DynamicBytes(b""),
+            reserved_1=arc4.DynamicBytes(b""),
             reserved_2=arc4.UInt32(0),
-            reserved_3=arc4.UInt32(0)
+            reserved_3=arc4.UInt32(0),
         )
         
         # Create request specification  
         request_spec = RequestSpecOffChain(
             source_specs=arc4.DynamicArray[SourceSpecOffChain](source_spec.copy()),
             aggregation=arc4.UInt32(0),
-            user_data=arc4.DynamicBytes.from_bytes(user_data)
+            user_data=arc4.DynamicBytes(user_data)
         )
         
         # Submit oracle request
@@ -290,7 +292,7 @@ class GoraContract(ARC4Contract):
             request_spec_encoded=request_spec.bytes,
             dest_app=dest_app,
             dest_method=dest_method,
-            box_refs=arc4.DynamicArray[BoxType](),
+            box_refs=box_refs,
             app_refs=arc4.DynamicArray[arc4.UInt64](),
             asset_refs=arc4.DynamicArray[arc4.UInt64](),
             account_refs=arc4.DynamicArray[arc4.Address]()
@@ -321,7 +323,7 @@ class GoraContract(ARC4Contract):
         request_spec = RequestSpec(
             source_specs=arc4.DynamicArray[SourceSpec](source_spec.copy()),
             aggregation=arc4.UInt32(aggregation),
-            user_data=arc4.DynamicBytes.from_bytes(user_data)
+            user_data=arc4.DynamicBytes(user_data)
         )
         
         # Submit oracle request
