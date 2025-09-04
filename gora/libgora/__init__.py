@@ -46,7 +46,7 @@ def run_cli(cli_cmd, args = [], env = {}, is_rt = False, cwd = None):
     logger.info(f'Running: "{" ".join(cmd)}"')
     passed_env = { **os.environ, **env }
     if is_rt:
-        subprocess.check_call(cmd, env=passed_env, cwd=cwd)
+        return subprocess.run(cmd, env=passed_env, cwd=cwd)
     else:
         return subprocess.check_output(cmd, env=passed_env, cwd=cwd, text=True)
 
@@ -82,8 +82,12 @@ class Config(object):
         addr_decoded = base64.b32decode(self.main_app_info["addr"] + "======")
         self.main_app_info["addr_bin"] = addr_decoded[:-4] # remove CRC
 
-    def create_dev_config(self):
-        server = f'http://{os.getenv("ALGOD_SERVER", "localhost")}:{os.getenv("ALGOD_PORT",4001)}'
+    @staticmethod
+    def create_dev_config():
+        if Config.GORA_CONFIG_FILE.exists():
+            os.remove(Config.GORA_CONFIG_FILE)
+
+        server = ':'.join([os.getenv("ALGOD_SERVER", "localhost"),os.getenv("ALGOD_PORT",4001)])
         return run_cli(
             "dev-init",
             [ "--dest-server", server ],
